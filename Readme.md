@@ -2,8 +2,8 @@
 
 [Interactive graph](https://khmccurdy.github.io/dirgraph-tree/dots_dist_1.html)
 
-[Main source code](blob/master/dots_dist.js)
+[Main source code](dots_dist.js)
 
-[Level tree object](blob/master/trees.js)
+[Level tree object](trees.js)
 
-[Various array and object methods](blob/master/array_obj_func.js)
+[Various array and object methods](array_obj_func.js)
