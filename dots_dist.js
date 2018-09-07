@@ -188,7 +188,7 @@ function drawGenLines(positions, tree, genLevel, proj=null){
             if (tx == +tx){
                 tPos = positions[tx];
                 // console.log(id, tx);
-                // if (tx <= maxID) continue;
+                if (cullBack && tx <= maxID) continue;
             } else {
                 // continue;
                 tPos = positions[tx+id+j];
@@ -214,8 +214,8 @@ function drawGenLines(positions, tree, genLevel, proj=null){
             // console.log(i,j,tx,tPos)
         }
     }
-    drawDots(exits, 'rgba(255,120,200,.5)');
-    // drawDots(fails, 'rgba(170,0,0,.5)');
+    if(drawExits) drawDots(exits, 'rgba(255,120,200,.5)');
+    if(drawFails) drawDots(fails, 'rgba(170,0,0,.5)');
 }
 
 function updateGenPositions(positions, gen){
@@ -277,6 +277,9 @@ var maxLevelDraw = 1;
 var yAngle = 0;
 var xAngle = 0;
 var animateOn = true;
+var cullBack = false;
+var drawExits = true;
+var drawFails = false;
 var maxLevels = 30;
 var scales = {
     sx:.8, sy:.8, sz: 20,
@@ -304,6 +307,9 @@ const keyRef = {
     w: 87,
     e: 69,
     r: 82,
+    j: 74,
+    k: 75,
+    l: 76,
 }
 
 d3.select("body").on("keydown",()=>{
@@ -320,6 +326,9 @@ d3.select("body").on("keydown",()=>{
     else if (key==keyRef.w){scales.sz++}
     else if (key==keyRef.e){scales.oy-=10}
     else if (key==keyRef.r){scales.oy+=10}
+    else if (key==keyRef.j){cullBack=!cullBack}
+    else if (key==keyRef.k){drawExits=!drawExits}
+    else if (key==keyRef.l){drawFails=!drawFails}
     doAnimate();
 })
 
