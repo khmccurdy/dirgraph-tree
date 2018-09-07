@@ -200,6 +200,8 @@ function drawGenLines(positions, tree, genLevel, proj=null){
             }
             // console.log(id, tx);
             let p1 = arraySum(centerOffset,proj?proj(tPos):tPos);
+            let pmid = arraySum(positions[id],tPos).map(d=>d/2);
+            
             // if (proj) p1 = proj(tPos);
             // console.log(p0);
             let gradient = c.createLinearGradient(...p0,...p1);
@@ -208,7 +210,18 @@ function drawGenLines(positions, tree, genLevel, proj=null){
             c.strokeStyle = gradient;
             c.beginPath();
             c.moveTo(...p0);
-            c.lineTo(...p1);
+            switch(curveMode){
+                case 1:
+                    let t1 = arraySum(centerOffset,proj([pmid[0],pmid[1],positions[id][2]]));
+                    c.bezierCurveTo(...t1,...p1,...p1);
+                    break;
+                case 2:
+                    let t0 = arraySum(centerOffset,proj([pmid[0],pmid[1],tPos[2]]));
+                    c.bezierCurveTo(...t0,...p1,...p1);
+                    break;
+                default:
+                    c.lineTo(...p1);
+            }
             c.stroke();
             
             // console.log(i,j,tx,tPos)
@@ -227,7 +240,7 @@ function updateGenPositions(positions, gen){
 }
 
 function triDotsState(positions, tree, state, radius){
-    let v0 = triPoints(radius);
+    let v0 = triPoints(radius)//.map(d=>[d[0],d[1]*(2*(state%2)-1)]);
     let count = 0;
     for (var x in tree[state]){
         if (x == 'gen') continue;
@@ -285,6 +298,7 @@ var scales = {
     sx:.8, sy:.8, sz: 20,
     ox:0, oy:-280
 }
+var curveMode = 0;
 
 function doAnimate(){
     animateLines(positions1,tree1,yAngle,maxLevelDraw,minLevelDraw,
@@ -310,6 +324,7 @@ const keyRef = {
     j: 74,
     k: 75,
     l: 76,
+    semi: 59,
 }
 
 d3.select("body").on("keydown",()=>{
@@ -329,6 +344,7 @@ d3.select("body").on("keydown",()=>{
     else if (key==keyRef.j){cullBack=!cullBack}
     else if (key==keyRef.k){drawExits=!drawExits}
     else if (key==keyRef.l){drawFails=!drawFails}
+    else if (key==keyRef.semi){curveMode=(curveMode+1)%3}
     doAnimate();
 })
 
