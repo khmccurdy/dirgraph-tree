@@ -254,14 +254,21 @@ function drawGenLines(positions, tree, genLevel, proj=null){
             c.beginPath();
             c.moveTo(...p0);
             switch(curveMode){
-                case 1:
+                case 1:{
                     let t1 = arraySum(centerOffset,proj([pmid[0],pmid[1],positions[id][2]]));
                     c.bezierCurveTo(...t1,...p1,...p1);
-                    break;
-                case 2:
+                    break;}
+                case 2:{
                     let t0 = arraySum(centerOffset,proj([pmid[0],pmid[1],tPos[2]]));
                     c.bezierCurveTo(...t0,...p1,...p1);
-                    break;
+                    break;}
+                case 3:{
+                    let lh=Math.abs(tPos[2]-positions[id][2])/3;
+                    lh=Math.max(Math.min(lh,.6),.2);
+                    let t0 = arraySum(centerOffset,proj(arraySum(positions[id],[0,0,lh])));
+                    let t1 = arraySum(centerOffset,proj(arraySum(tPos,[0,0,-lh])));
+                    c.bezierCurveTo(...t0,...t1,...p1);
+                    break;}
                 default:
                     c.lineTo(...p1);
             }
@@ -295,6 +302,7 @@ var scales = {
     ox:0, oy:-280
 }
 var curveMode = 0;
+const nCurveModes = 4;
 
 function animateLines(positions, tree, count=animCount, maxL=30, minL=0,
     sx=.8,sy=.8,sz=20,ox=0,oy=-280,angle=0){
@@ -353,7 +361,7 @@ d3.select("body").on("keydown",()=>{
         else if (key==keyRef.j){cullBack=!cullBack}
         else if (key==keyRef.k){drawExits=!drawExits}
         else if (key==keyRef.l){drawFails=!drawFails}
-        else if (keyRef.semi.includes(key)){curveMode=(curveMode+1)%3}
+        else if (keyRef.semi.includes(key)){curveMode=(curveMode+1)%nCurveModes}
     }
     doAnimate();
 })
