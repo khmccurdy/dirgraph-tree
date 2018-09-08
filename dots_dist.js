@@ -11,6 +11,7 @@ const fullArc = [0,2*Math.PI];
 var animLines=true;
 
 var positions1;
+var positions4;
 
 // Dummy set of dots for experimentation and default values.
 var fullRadius_ = 300;
@@ -111,7 +112,7 @@ if (false){
 
 // Tree iteration
 
-function nextLevel(dots, radius=dotRadius/3) {
+function nextLevel(dots, radius=dotRadius_/3) {
     const cos30 = Math.sqrt(3)/2
     var v1 = [0,-radius];
     var v2 = [radius*cos30,radius/2];
@@ -130,7 +131,7 @@ function triPoints(radius) {
 // positions1 = {0:[0,0,0],1:[200,123,1],2:[-300,132,1],x0r:[4,-231,0.5],"@1l":[250,145,2]};
 // positions1 = {0:[0,0,0]};
 
-function calcPositions(tree, maxL=30) {
+function calcPositions(tree, maxL=30, rdiv=2) {
     let positions = {0:[0,0,0]};
 
     triDotsState(positions, tree, 0, 50);
@@ -138,15 +139,16 @@ function calcPositions(tree, maxL=30) {
     for(var g=1;g<maxL;g++){
         let gen = getGen(positions, g);
         if (gen.ids.length==0) break;
-        let fullRadius = gen.radius;
+        let fullRadius = gen.radius;//Math.min(gen.radius,50*Math.pow(g,.6));
         let dotRadius = getDotRadius(fullRadius, gen.ids.length,1.4);
         iterateMultiple(gen.pos,10,dotRadius,fullRadius,true,true,false);
 
         updateGenPositions(positions, gen);
 
         for (var i in gen.ids){
-            triDotsState(positions, tree, gen.ids[i], Math.min(dotRadius/2,50));
+            triDotsState(positions, tree, gen.ids[i], Math.min(dotRadius/rdiv,50));
         }
+        // console.log(fullRadius);
     }
     return positions;
 }
@@ -245,7 +247,7 @@ function drawGenLines(positions, tree, genLevel, proj=null){
             }
             
             let p1 = arraySum(centerOffset,proj?proj(tPos):tPos);
-            let pmid = arraySum(positions[id],tPos).map(d=>d/2);
+            let pmid = arrayLerp(positions[id],tPos,.5);
             
             let gradient = c.createLinearGradient(...p0,...p1);
             gradient.addColorStop(0,`rgba(${dirColors[j]},0.7)`);
@@ -255,7 +257,7 @@ function drawGenLines(positions, tree, genLevel, proj=null){
             c.moveTo(...p0);
             switch(curveMode){
                 case 1:{
-                    let t1 = arraySum(centerOffset,proj([pmid[0],pmid[1],positions[id][2]]));
+                    let t1 = arraySum(centerOffset,proj(arrayVLerp(pmid,positions[id],[0,0,1])));
                     c.bezierCurveTo(...t1,...p1,...p1);
                     break;}
                 case 2:{
@@ -288,6 +290,9 @@ c.fillRect(...screenRect);
 positions1 = calcPositions(tree1);
 var animCount=0;
 
+var positions_ = positions1;
+var tree_ = tree1;
+
 var minLevelDraw = 0;
 var maxLevelDraw = 1;
 var yAngle = 0;
@@ -303,20 +308,21 @@ var scales = {
 }
 var curveMode = 0;
 const nCurveModes = 4;
+var dotRDiv = 2;
 
 function animateLines(positions, tree, count=animCount, maxL=30, minL=0,
-    sx=.8,sy=.8,sz=20,ox=0,oy=-280,angle=0){
-c.clearRect(...screenRect);
-c.fillStyle="black";
-c.fillRect(...screenRect);
-let cosA = Math.cos(count);
-proj=d=>proj2d(d,sx,sy/2*(1-cosA),sz/2*(1+cosA),0,oy/2*(1+cosA),angle,false);
-for (var i = minL; i<maxL; i++){drawGenLines(positions, tree, i, proj)};
-animCount+=0.005;
+        sx=.8,sy=.8,sz=20,ox=0,oy=-280,angle=0){
+    c.clearRect(...screenRect);
+    c.fillStyle="black";
+    c.fillRect(...screenRect);
+    let cosA = Math.cos(count);
+    proj=d=>proj2d(d,sx,sy/2*(1-cosA),sz/2*(1+cosA),0,oy/2*(1+cosA),angle,false);
+    for (var i = minL; i<maxL; i++){drawGenLines(positions, tree, i, proj)};
+    animCount+=0.005;
 }
 
 function doAnimate(){
-    animateLines(positions1,tree1,yAngle,maxLevelDraw,minLevelDraw,
+    animateLines(positions_,tree_,yAngle,maxLevelDraw,minLevelDraw,
         scales.sx,scales.sy,scales.sz,scales.ox,scales.oy,xAngle);
 }
 
@@ -340,6 +346,8 @@ const keyRef = {
     j: 74,
     k: 75,
     l: 76,
+    c: 67,
+    v: 86,
     semi: [59,186],
 }
 
@@ -361,10 +369,27 @@ d3.select("body").on("keydown",()=>{
         else if (key==keyRef.j){cullBack=!cullBack}
         else if (key==keyRef.k){drawExits=!drawExits}
         else if (key==keyRef.l){drawFails=!drawFails}
+        else if (key==keyRef.c && dotRDiv > 1){dotRDiv-=.5;updateRadius(dotRDiv)}
+        else if (key==keyRef.v){dotRDiv+=.5;updateRadius(dotRDiv)}
         else if (keyRef.semi.includes(key)){curveMode=(curveMode+1)%nCurveModes}
     }
     doAnimate();
 })
+
+function setTree(positions,tree,maxL=null){
+    if (!maxL) maxL = tree[tree.length-1].gen+1;
+    if (!positions) positions = calcPositions(tree,maxL,dotRDiv);
+
+    positions_ = positions;
+    tree_ = tree;
+    maxLevels = maxL;
+    doAnimate();
+}
+
+function updateRadius(rdiv){
+    positions_ = calcPositions(tree_,maxLevels,rdiv);
+    doAnimate();
+}
 
 setInterval(()=>{
         if (!animateOn || maxLevelDraw>maxLevels) return;
@@ -375,4 +400,6 @@ setInterval(()=>{
 // Array and Object functions
 
 // arraySum(a1,a2);
+// arrayLerp(a1, a2, t);
+// arrayVLerp(a1, a2, v);
 // Object.clone();

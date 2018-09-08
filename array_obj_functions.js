@@ -2,6 +2,22 @@ function arraySum(a1, a2){
     return a1.map((d,i)=>d+a2[i])
 }
 
+function lerp(a,b,t){
+    return a+t*(b-a);
+}
+
+function arrayLerp(a1, a2, t){
+    return a1.map((d,i)=>lerp(d, a2[i], t));
+}
+
+function arrayVLerp(a1, a2, v){
+    let result = [];
+    for (var i in a1){
+        result.push(lerp(a1[i],a2[i],v[i]));
+    }
+    return result;
+}
+
 Object.equals = function( x, y ) {
     if ( x === y ) return true;  
     if ( ! ( x instanceof Object ) || ! ( y instanceof Object ) ) return false;
