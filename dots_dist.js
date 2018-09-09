@@ -215,13 +215,16 @@ function drawProjDots(positions, sx=.5,sy=.01,sz=20,ox=0,oy=-280,angle=0, clear=
     drawDots(dots);
 }
 
-function drawGenLines(positions, tree, genLevel, proj=null){
+function drawGenLines(positions, tree, genLevel, proj=null,factor=0){
     let gen = getGen(positions, genLevel);
     const dirColors = {u:'255,0,150',d:'0,255,150',l:'0,150,255',r:'255,200,0'};
     c.strokeStyle = "rgba(0,0,0,0.5)";
     let maxID = Math.max(...gen.ids);
     let exits = [];
     let fails = [];
+
+    // let factor = (Date.now()/1000*flowRate)%1;
+    let stop = d=>Math.max(Math.min(factor+d,1),0);
 
     for (var i in gen.ids){
         let id = gen.ids[i];
@@ -250,8 +253,18 @@ function drawGenLines(positions, tree, genLevel, proj=null){
             let pmid = arrayLerp(positions[id],tPos,.5);
             
             let gradient = c.createLinearGradient(...p0,...p1);
-            gradient.addColorStop(0,`rgba(${dirColors[j]},0.7)`);
-            gradient.addColorStop(1,`rgba(${dirColors[j]},0.1)`);
+
+            if (flowLight){
+                gradient.addColorStop(stop(0),`rgba(${dirColors[j]},0.1)`);
+                gradient.addColorStop(stop(.2),`rgba(${dirColors[j]},0.7)`);
+                gradient.addColorStop(stop(.3),`rgba(${dirColors[j]},0.1)`);
+                gradient.addColorStop(stop(-1),`rgba(${dirColors[j]},0.1)`);
+                gradient.addColorStop(stop(.2-1),`rgba(${dirColors[j]},0.7)`);
+                gradient.addColorStop(stop(.3-1),`rgba(${dirColors[j]},0.1)`);
+            } else {
+                gradient.addColorStop(0,`rgba(${dirColors[j]},0.7)`);
+                gradient.addColorStop(1,`rgba(${dirColors[j]},0.1)`);
+            }
             c.strokeStyle = gradient;
             c.beginPath();
             c.moveTo(...p0);
@@ -309,6 +322,9 @@ var scales = {
 var curveMode = 0;
 const nCurveModes = 4;
 var dotRDiv = 2;
+var flowLight = false;
+var flowRate = 1;
+var flowIntervalID;
 
 function animateLines(positions, tree, count=animCount, maxL=30, minL=0,
         sx=.8,sy=.8,sz=20,ox=0,oy=-280,angle=0){
@@ -317,13 +333,15 @@ function animateLines(positions, tree, count=animCount, maxL=30, minL=0,
     c.fillRect(...screenRect);
     let cosA = Math.cos(count);
     proj=d=>proj2d(d,sx,sy/2*(1-cosA),sz/2*(1+cosA),0,oy/2*(1+cosA),angle,false);
-    for (var i = minL; i<maxL; i++){drawGenLines(positions, tree, i, proj)};
+    let flowFactor = (Date.now()/1000*flowRate)%1;
+    for (var i = minL; i<maxL; i++){drawGenLines(positions, tree, i, proj, flowFactor)};
     animCount+=0.005;
 }
 
 function doAnimate(){
     animateLines(positions_,tree_,yAngle,maxLevelDraw,minLevelDraw,
         scales.sx,scales.sy,scales.sz,scales.ox,scales.oy,xAngle);
+    // console.log(animCount);
 }
 
 $canvas.on("mousemove",function(e){
@@ -348,6 +366,9 @@ const keyRef = {
     l: 76,
     c: 67,
     v: 86,
+    u: 85,
+    z: 90,
+    x: 88,
     semi: [59,186],
 }
 
@@ -371,6 +392,13 @@ d3.select("body").on("keydown",()=>{
         else if (key==keyRef.l){drawFails=!drawFails}
         else if (key==keyRef.c && dotRDiv > 1){dotRDiv-=.5;updateRadius(dotRDiv)}
         else if (key==keyRef.v){dotRDiv+=.5;updateRadius(dotRDiv)}
+        else if (key==keyRef.u){
+            flowLight=!flowLight;
+            if (flowLight) {flowIntervalID=setInterval(doAnimate,10)}
+            else {clearInterval(flowIntervalID)}
+        }
+        else if (key==keyRef.z){flowRate*=.8}
+        else if (key==keyRef.x){flowRate/=.8}
         else if (keyRef.semi.includes(key)){curveMode=(curveMode+1)%nCurveModes}
     }
     doAnimate();
