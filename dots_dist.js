@@ -14,6 +14,7 @@ var positions1;
 var positions4;
 
 // Dummy set of dots for experimentation and default values.
+
 var fullRadius_ = 300;
 
 var dots1 = [[-88,-260],[88,-260],[0,-104],
@@ -48,6 +49,7 @@ function drawCircle(center=true){
     c.beginPath();
     c.arc(...centerOffset, fullRadius_, ...fullArc);
     c.stroke();
+
     if (center) {
         c.fillStyle = "#ff99cc";
         c.beginPath();
@@ -117,7 +119,7 @@ function nextLevel(dots, radius=dotRadius_/3) {
     var v1 = [0,-radius];
     var v2 = [radius*cos30,radius/2];
     var v3 = [-radius*cos30,radius/2];
-    newDots = [];
+    var newDots = [];
     dots.forEach(d=>{newDots.push(arraySum(d,v1), arraySum(d,v2), arraySum(d,v3))});
     return newDots;
 }
@@ -139,16 +141,16 @@ function calcPositions(tree, maxL=30, rdiv=2) {
     for(var g=1;g<maxL;g++){
         let gen = getGen(positions, g);
         if (gen.ids.length==0) break;
+
         let fullRadius = gen.radius;//Math.min(gen.radius,50*Math.pow(g,.6));
         let dotRadius = getDotRadius(fullRadius, gen.ids.length,1.4);
-        iterateMultiple(gen.pos,10,dotRadius,fullRadius,true,true,false);
 
+        iterateMultiple(gen.pos,10,dotRadius,fullRadius,true,true,false);
         updateGenPositions(positions, gen);
 
         for (var i in gen.ids){
             triDotsState(positions, tree, gen.ids[i], Math.min(dotRadius/rdiv,50));
         }
-        // console.log(fullRadius);
     }
     return positions;
 }
@@ -215,16 +217,16 @@ function drawProjDots(positions, sx=.5,sy=.01,sz=20,ox=0,oy=-280,angle=0, clear=
     drawDots(dots);
 }
 
-function drawGenLines(positions, tree, genLevel, proj=null,factor=0){
+function drawGenLines(positions, tree, genLevel, proj=null,flowFactor=0){
     let gen = getGen(positions, genLevel);
-    const dirColors = {u:'255,0,150',d:'0,255,150',l:'0,150,255',r:'255,200,0'};
-    c.strokeStyle = "rgba(0,0,0,0.5)";
     let maxID = Math.max(...gen.ids);
+
     let exits = [];
     let fails = [];
 
-    // let factor = (Date.now()/1000*flowRate)%1;
-    let stop = d=>Math.max(Math.min(factor+d,1),0);
+    let stop = d=>Math.max(Math.min(flowFactor+d,1),0);
+    const dirColors = {u:'255,0,150',d:'0,255,150',l:'0,150,255',r:'255,200,0'};
+    c.strokeStyle = "rgba(0,0,0,0.5)";
 
     for (var i in gen.ids){
         let id = gen.ids[i];
@@ -265,9 +267,11 @@ function drawGenLines(positions, tree, genLevel, proj=null,factor=0){
                 gradient.addColorStop(0,`rgba(${dirColors[j]},0.7)`);
                 gradient.addColorStop(1,`rgba(${dirColors[j]},0.1)`);
             }
+
             c.strokeStyle = gradient;
             c.beginPath();
             c.moveTo(...p0);
+            
             switch(curveMode){
                 case 1:{
                     let t1 = arraySum(centerOffset,proj(arrayVLerp(pmid,positions[id],[0,0,1])));
@@ -341,7 +345,6 @@ function animateLines(positions, tree, count=animCount, maxL=30, minL=0,
 function doAnimate(){
     animateLines(positions_,tree_,yAngle,maxLevelDraw,minLevelDraw,
         scales.sx,scales.sy,scales.sz,scales.ox,scales.oy,xAngle);
-    // console.log(animCount);
 }
 
 $canvas.on("mousemove",function(e){
@@ -375,8 +378,10 @@ const keyRef = {
 d3.select("body").on("keydown",()=>{
     let key=d3.event.keyCode;
     console.log(key);
+
     ao = animateOn;
     animateOn = false;
+
     if (key==keyRef.a && minLevelDraw > 0){minLevelDraw--}
     else if (key==keyRef.s && minLevelDraw < maxLevelDraw){minLevelDraw++}
     else if (key==keyRef.d && maxLevelDraw > minLevelDraw){maxLevelDraw--}
